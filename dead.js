@@ -370,10 +370,9 @@ var Dead = (function () {
         // ★ 音效：重生後依日夜狀態恢復背景音效
         if (typeof AudioManager !== 'undefined') AudioManager.onRespawn();
 
-        // ★ 重生時重置 Victor 狀態（清除殘留並恢復 UI 容器顯示）
-        //   注意：這裡用 reset() 而非 forceClose()，
-        //   forceClose 會把 _ui.style.display 設為 none 導致終端機/紙張永久消失
-        if (typeof Victor !== 'undefined' && Victor.reset) Victor.reset();
+        // ★ 重生時重置 Victor UI（保留記憶，清除殘留 UI 並恢復容器顯示）
+        //   使用 resetUI() 而非 reset()，避免清除已收集的紙張記憶
+        if (typeof Victor !== 'undefined' && Victor.resetUI) Victor.resetUI();
 
         console.log('[Dead] 重置完成');
     }

@@ -193,18 +193,25 @@ var AudioManager = (function () {
 
     // 死亡動畫結束，重生後呼叫（由 dead.js _finish 觸發）
     function onRespawn() {
-        _state       = 'day';
         _chaseActive = false;
         _lastNight   = false;
-        // 重生後由下一幀 update() 根據當前日夜狀態決定播放哪條
-        // 先停掉 kill（若還在播）再播 day（預設重生為白天狀態）
+
+        // 先強制停止 kill.mp3（可能還在播）
         _stop('kill');
-        if (_gameActive && !_paused) {
+
+        if (!_gameActive || _paused) return;
+
+        // 延遲 80ms 再播，避免與 kill.mp3 的 pause() 產生 promise 衝突
+        // 導致瀏覽器拒絕 autoplay
+        setTimeout(function () {
+            if (!_gameActive || _paused) return;
             var isNight = (typeof Stage !== 'undefined') ? Stage.isNight() : false;
             _state = isNight ? 'night' : 'day';
+            _stop('day');
+            _stop('night');
             _play(_state, true);
             console.log('[Audio] 重生 → ' + _state + '.mp3');
-        }
+        }, 80);
     }
 
     // 勝利時呼叫（noise.mp3，不循環）

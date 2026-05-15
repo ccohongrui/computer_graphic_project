@@ -993,6 +993,62 @@ var Victor = (function () {
     }
 
     // ================================================================
+    //  resetUI — 重置 UI 狀態但保留記憶（死亡重生時呼叫）
+    // ================================================================
+    function resetUI() {
+        _terminalOpen = false;
+        _escaped      = false;
+        _password     = '';
+        _inputBuffer  = '';
+
+        // 清除逃脫動畫 overlay（若還殘留）
+        var overlay = document.getElementById('victor-escape-overlay');
+        if (overlay) overlay.remove();
+
+        // 重置終端機 UI
+        if (_terminalEl) {
+            _terminalEl.style.opacity       = '0';
+            _terminalEl.style.pointerEvents = 'none';
+            _terminalEl.style.borderColor   = '#3a3a2a';
+            var vtLog = document.getElementById('vt-log');
+            if (vtLog) vtLog.innerHTML = '';
+            var vtInput = document.getElementById('vt-input');
+            if (vtInput) vtInput.textContent = '';
+        }
+        // 重置紙張預覽 UI
+        if (_paperViewEl) {
+            _paperViewEl.style.opacity       = '0';
+            _paperViewEl.style.pointerEvents = 'none';
+            var card = document.getElementById('victor-paper-card');
+            if (card) card.innerHTML = '';
+        }
+        // 重置提示
+        if (_notifyEl) {
+            _notifyEl.style.opacity = '0';
+            _notifyEl.textContent   = '';
+        }
+
+        // 重新顯示 UI 容器與 hintCanvas
+        if (_ui) _ui.style.display = '';
+        if (_hintCanvas) {
+            var hctx = _hintCanvas.getContext('2d');
+            hctx.clearRect(0, 0, _hintCanvas.width, _hintCanvas.height);
+            _hintCanvas.style.display = '';
+        }
+
+        // 確保 InputLock 釋放
+        if (typeof InputLock !== 'undefined') {
+            InputLock.release('victor-paper');
+            InputLock.release('victor-terminal');
+        }
+
+        // 重新渲染記憶 HUD（_collected 保留不清）
+        _updateMemoryHUD();
+
+        console.log('[Victor] UI 已重置（記憶保留，共 ' + _collected.length + ' 張）');
+    }
+
+    // ================================================================
     //  reset — 重置所有內部狀態（回主選單後、再次開始前呼叫）
     // ================================================================
     function reset() {
@@ -1096,6 +1152,7 @@ var Victor = (function () {
     return {
         init        : init,
         reset       : reset,
+        resetUI     : resetUI,
         update      : update,
         forceClose  : forceClose,
         getCollected: function () { return _collected; },
