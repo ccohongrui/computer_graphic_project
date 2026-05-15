@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>THE BACKROOMS</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ── Settings Panel 雙欄覆蓋 ──────────────────────────────────── */
+    #settings-panel {
+      width: min(860px, 92vw) !important;
+      max-height: 88vh !important;
+      overflow-y: auto !important;
+    }
+    #settings-panel::-webkit-scrollbar { width: 4px; }
+    #settings-panel::-webkit-scrollbar-track { background: transparent; }
+    #settings-panel::-webkit-scrollbar-thumb { background: #3a3a2a; border-radius: 2px; }
+
+    /* header 橫跨全寬 */
+    #settings-header { grid-column: 1 / -1; }
+
+    /* 雙欄主體 */
+    #settings-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 24px;
+      align-items: start;
+    }
+
+    /* KEY BINDINGS 獨佔右欄整列 */
+    #settings-section-keys {
+      grid-row: 1 / 99;  /* 撐滿右欄所有行 */
+    }
+
+    /* ── Key Bindings ─────────────────────────────────────────────── */
+    .keybind-btn {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      min-width: 72px;
+      padding: 4px 8px;
+      background: #1a1a10;
+      border: 1px solid #3a3a2a;
+      color: #c8b87a;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+    .keybind-btn:hover  { border-color: #c8b87a; color: #e8d89a; }
+    .keybind-btn.listening {
+      border-color: #ff4444;
+      color: #ff4444;
+      animation: kb-blink .5s infinite alternate;
+    }
+    @keyframes kb-blink { from { opacity:1 } to { opacity:.4 } }
+
+    /* ── Slider ───────────────────────────────────────────────────── */
+    .slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .settings-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 120px;
+      height: 3px;
+      background: #3a3a2a;
+      outline: none;
+      cursor: pointer;
+    }
+    .settings-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #c8b87a;
+      cursor: pointer;
+    }
+    .settings-slider::-moz-range-thumb {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #c8b87a;
+      border: none;
+      cursor: pointer;
+    }
+    .slider-val {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: #c8b87a;
+      min-width: 38px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="grain"></div>
+  <canvas id="glCanvas"></canvas>
+  <div id="bg"></div>
+  <div id="vignette"></div>
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="load-title">THE BACKROOMS</div>
+    <div class="load-sub" id="loadSub">INITIALIZING LEVEL 0...</div>
+    <div class="bar-wrap">
+      <div class="bar-fill" id="barFill"></div>
+    </div>
+    <div class="load-pct" id="loadPct">0%</div>
+  </div>
+
+  <!-- 主選單 -->
+  <div id="menu">
+    <div class="menu-title">
+      <h1>THE<br>BACKROOMS</h1>
+      <p>LEVEL 0 — THE LOBBY</p>
+    </div>
+    <div class="btn-group">
+      <button class="menu-btn primary" id="btnStart">GAME START</button>
+      <div class="menu-sep"></div>
+      <button class="menu-btn" id="btnSet">SETTING</button>
+      <div class="menu-sep"></div>
+      <button class="menu-btn" id="btnQuestion">DOUBT</button>
+      <div class="menu-sep"></div>
+      <button class="menu-btn" id="btnAbout">ABOUT</button>
+    </div>
+  </div>
+
+  <!-- 設定面板 -->
+  <div id="settings-overlay">
+    <div id="settings-panel">
+      <div id="settings-header">
+        <span class="settings-title">S E T T I N G S</span>
+        <button id="settings-close">✕</button>
+      </div>
+
+      <div id="settings-body">
+
+        <!-- ══ 左欄 ══════════════════════════════════════════════════ -->
+        <div id="settings-col-left">
+
+          <div class="settings-section">
+            <div class="settings-section-label">◈ MONSTER CONTROL</div>
+
+            <div class="settings-row">
+              <span class="settings-label">SKINSTEALER</span>
+              <button class="toggle-btn active" data-var="onSkinstealer" id="tog-skinstealer">ON</button>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">BACKTERIA</span>
+              <button class="toggle-btn active" data-var="onBackteria" id="tog-backteria">ON</button>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">PARTYGOER</span>
+              <button class="toggle-btn active" data-var="onPartygeor" id="tog-partygeor">ON</button>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">SMILER</span>
+              <button class="toggle-btn active" data-var="onSmiler" id="tog-smiler">ON</button>
+            </div>
+
+            <div class="settings-divider"></div>
+
+            <div class="settings-row">
+              <span class="settings-label">PEACE MODE <span class="settings-hint">（全部停止生成）</span></span>
+              <button class="toggle-btn" data-var="piece" id="tog-peace">OFF</button>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-label">◈ DEVELOPER CONSOLE</div>
+
+            <div class="settings-row">
+              <span class="settings-label">CONSOLE ACCESS <span class="settings-hint">（T 鍵）</span></span>
+              <button class="toggle-btn active" id="tog-console">ON</button>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">EVAL COMMAND <span class="settings-hint">（危險）</span></span>
+              <button class="toggle-btn active" id="tog-eval">ON</button>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">NPC COMMANDS</span>
+              <button class="toggle-btn active" id="tog-npc-cmd">ON</button>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">TELEPORT COMMAND</span>
+              <button class="toggle-btn active" id="tog-tp-cmd">ON</button>
+            </div>
+          </div>
+
+          <!-- ◈ AUDIO -->
+          <div class="settings-section">
+            <div class="settings-section-label">◈ AUDIO</div>
+            <div class="settings-row">
+              <span class="settings-label">MASTER VOLUME</span>
+              <div class="slider-wrap">
+                <input type="range" class="settings-slider" id="slider-volume" min="0" max="100" value="100">
+                <span class="slider-val" id="val-volume">100%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ◈ CONTROLS -->
+          <div class="settings-section">
+            <div class="settings-section-label">◈ CONTROLS</div>
+            <div class="settings-row">
+              <span class="settings-label">MOUSE SENSITIVITY</span>
+              <div class="slider-wrap">
+                <input type="range" class="settings-slider" id="slider-sens" min="1" max="50" value="15">
+                <span class="slider-val" id="val-sens">0.15</span>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /左欄 -->
+
+        <!-- ══ 右欄：KEY BINDINGS ════════════════════════════════════ -->
+        <div id="settings-section-keys" class="settings-section">
+          <div class="settings-section-label">◈ KEY BINDINGS</div>
+          <div class="settings-hint" style="margin:0 0 10px 0;font-size:11px;color:#666">點擊按鈕後按下新按鍵以重新綁定　ESC 取消</div>
+
+          <div class="settings-row">
+            <span class="settings-label">MOVE FORWARD</span>
+            <button class="keybind-btn" data-bind="forward">W</button>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">MOVE BACKWARD</span>
+            <button class="keybind-btn" data-bind="backward">S</button>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">MOVE LEFT</span>
+            <button class="keybind-btn" data-bind="left">A</button>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">MOVE RIGHT</span>
+            <button class="keybind-btn" data-bind="right">D</button>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row">
+            <span class="settings-label">JUMP</span>
+            <button class="keybind-btn" data-bind="jump">SPACE</button>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">CROUCH</span>
+            <button class="keybind-btn" data-bind="crouch">SHIFT</button>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">SPRINT</span>
+            <button class="keybind-btn" data-bind="sprint">CAPS</button>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">FLASHLIGHT</span>
+            <button class="keybind-btn" data-bind="flashlight">F</button>
+          </div>
+        </div><!-- /右欄 -->
+
+      </div><!-- /settings-body -->
+
+      <div class="settings-footer">BACKROOMS — LEVEL 0</div>
+    </div>
+  </div>
+
+  <!-- QUESTION 文件面板 -->
+  <div id="question-overlay">
+    <div id="doc-stack">
+      <button id="question-close">✕ CLOSE</button>
+
+      <!-- 順序：第5張在最底，第1張在最上（z-index由CSS控制） -->
+      <div class="doc-card" data-idx="4"><img src="partygeor.png" alt="PARTYGOER" draggable="false"></div>
+      <div class="doc-card" data-idx="3"><img src="smiler.png"    alt="SMILER"    draggable="false"></div>
+      <div class="doc-card" data-idx="2"><img src="skinstealer.png" alt="SKINSTEALER" draggable="false"></div>
+      <div class="doc-card" data-idx="1"><img src="backteria.png" alt="BACKTERIA" draggable="false"></div>
+      <div class="doc-card" data-idx="0"><img src="rule.png"      alt="RULE"      draggable="false"></div>
+
+      <div id="doc-hint">CLICK TO TURN ›</div>
+      <div id="doc-counter">1 / 5</div>
+    </div>
+  </div>
+
+  <!-- ABOUT ME 面板 -->
+  <div id="about-overlay">
+    <div id="about-panel">
+      <div id="about-header">
+        <span class="about-title">A B O U T</span>
+        <button id="about-close">✕</button>
+      </div>
+      <div id="about-body">
+        <div class="about-project">
+          <div class="about-project-label">PROJECT</div>
+          <div class="about-project-name">計算機圖學專題</div>
+          <div class="about-project-org">臺灣師範大學 ／ 資訊工程學系</div>
+        </div>
+        <div class="about-divider"></div>
+        <div class="about-section-label">◈ CREDITS</div>
+        <div class="about-row">
+          <span class="about-role">前端製作</span>
+          <span class="about-name">林O睿</span>
+        </div>
+        <div class="about-row">
+          <span class="about-role">後台邏輯</span>
+          <span class="about-name">林O睿</span>
+        </div>
+        <div class="about-row">
+          <span class="about-role">音效後製</span>
+          <span class="about-name">林O睿</span>
+        </div>
+        <div class="about-divider"></div>
+        <div class="about-section-label">◈ ASSETS</div>
+        <div class="about-asset-row">
+          <span class="about-asset-label">3D 模型</span>
+          <span class="about-asset-src">Sketchfab</span>
+        </div>
+        <div class="about-asset-row">
+          <span class="about-asset-label">動態綁定</span>
+          <span class="about-asset-src">Mixamo</span>
+        </div>
+        <div class="about-asset-row">
+          <span class="about-asset-label">圖片素材</span>
+          <span class="about-asset-src">Google</span>
+        </div>
+      </div>
+      <div class="about-footer">THE BACKROOMS — LEVEL 0</div>
+    </div>
+  </div>
+
+  <div id="crosshair">
+    <div class="dot"></div>
+  </div>
+  <div id="hud">
+    <div id="coordX">X: —</div>
+    <div id="coordY">Y: —</div>
+    <div id="coordZ">Z: —</div>
+  </div>
+
+  <!-- 暫停按鈕 -->
+  <div id="pause-btn" style="display:none">&#10074;&#10074;</div>
+
+  <!-- 暫停選單 -->
+  <div id="pause-overlay">
+    <div id="pause-panel">
+      <div class="pause-title">P A U S E D</div>
+      <button class="pause-menu-btn" id="pauseResume">RESUME</button>
+      <div class="pause-sep"></div>
+      <button class="pause-menu-btn" id="pauseSet">SETTINGS</button>
+      <div class="pause-sep"></div>
+      <button class="pause-menu-btn pause-quit" id="pauseQuit">QUIT TO MENU</button>
+    </div>
+  </div>
+
+  <div id="cursor"></div>
+
+  <script src="cuon-matrix.js"></script>
+  <script src="input-lock.js"></script><!-- ★ 全域輸入鎖（必須最先載入） -->
+  <script src="move.js"></script>
+  <script src="physics.js"></script>
+  <script src="stage.js"></script>
+  <script src="paper.js"></script>
+  <script src="victor.js"></script>
+  <script src="npc.js"></script>
+  <script src="flashlight.js"></script>
+  <script src="dead.js"></script>
+  <script src="audio.js"></script><!-- ★ 音效管理（需在 main.js 之前） -->
+  <script src="main.js"></script>
+  <script src="instruction.js"></script><!-- ★ 開發者控制台 -->
+
+  <script>
+    // 自訂游標
+    const cursor = document.getElementById('cursor');
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top = e.clientY + 'px';
+    });
+
+    // Loading 動畫
+    const bar = document.getElementById('barFill');
+    const loadPct = document.getElementById('loadPct');
+    const loadSub = document.getElementById('loadSub');
+    const loading = document.getElementById('loading');
+
+    const steps = [
+      { target: 30, delay: 300, label: 'SCANNING GEOMETRY...' },
+      { target: 55, delay: 400, label: 'LOADING TEXTURES...' },
+      { target: 75, delay: 350, label: 'SPAWNING ENTITIES...' },
+      { target: 90, delay: 450, label: 'CALIBRATING PHYSICS...' },
+      { target: 100, delay: 300, label: 'ENTERING THE BACKROOMS...' },
+    ];
+
+    let progress = 0;
+    function runStep(i) {
+      if (i >= steps.length) {
+        setTimeout(() => {
+          loading.classList.add('fade-out');
+          setTimeout(() => {
+            loading.classList.add('done');
+            // ★ 音效：主選單出現，旗標記下，等使用者第一次點擊再播
+            //   瀏覽器 Autoplay Policy 禁止無互動前自動播放音效
+            window._menuMusicPending = true;
+          }, 800);
+        }, 400);
+        return;
+      }
+      const step = steps[i];
+      loadSub.textContent = step.label;
+      const start = progress, range = step.target - start;
+      const startTime = performance.now();
+      function animate(now) {
+        const t = Math.min((now - startTime) / step.delay, 1);
+        const eased = 1 - Math.pow(1 - t, 2);
+        progress = start + range * eased;
+        bar.style.width = progress + '%';
+        loadPct.textContent = Math.floor(progress) + '%';
+        if (t < 1) requestAnimationFrame(animate);
+        else setTimeout(() => runStep(i + 1), 80);
+      }
+      requestAnimationFrame(animate);
+    }
+    setTimeout(() => runStep(0), 400);
+
+    // 選單邏輯
+    const menu = document.getElementById('menu');
+    const bg = document.getElementById('bg');
+    const crosshair = document.getElementById('crosshair');
+    const hud = document.getElementById('hud');
+    const glCanvas = document.getElementById('glCanvas');
+    let gameActive = false;
+
+    // ★ 瀏覽器 Autoplay Policy：等使用者第一次點擊/按鍵後才播放主選單音樂
+    function _tryStartMenuMusic() {
+      if (window._menuMusicPending && typeof AudioManager !== 'undefined') {
+        window._menuMusicPending = false;
+        AudioManager.playMenu();
+      }
+    }
+    document.addEventListener('click',   _tryStartMenuMusic, { once: true });
+    document.addEventListener('keydown', _tryStartMenuMusic, { once: true });
+
+    document.getElementById('btnStart').addEventListener('click', () => {
+      if (window.gameActive) return;
+      window.gameActive = true;
+      menu.classList.add('hide');
+      bg.classList.add('hide');
+      cursor.classList.add('hidden');
+      crosshair.classList.add('show');
+      hud.style.display = 'block';
+
+      // 重置死亡畫面（若上次是死亡回來的）
+      if (typeof Dead !== 'undefined' && Dead.reset) Dead.reset();
+
+      main();
+      Instruction.init(); // ★ 初始化開發者控制台
+      PauseManager.init();
+      PauseManager.show();
+
+      setTimeout(() => glCanvas.requestPointerLock(), 100);
+    });
+
+    document.getElementById('btnSet').addEventListener('click', () => {
+      SettingsPanel.open();
+    });
+    document.getElementById('btnQuestion').addEventListener('click', () => {
+      QuestionPanel.open();
+    });
+    document.getElementById('btnAbout').addEventListener('click', () => {
+      AboutPanel.open();
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      if (document.pointerLockElement === glCanvas) {
+        cursor.classList.add('hidden');
+      } else {
+        cursor.classList.remove('hidden');
+      }
+    });
+
+    // 任何時候按 F11 都可以全螢幕（不依賴 Screen.init）
+    document.addEventListener('keydown', e => {
+      if (e.code === 'F11') {
+        e.preventDefault();
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else {
+          document.documentElement.requestFullscreen();  // 整個頁面全螢幕
+        }
+      }
+    });
+
+    // 全螢幕變化時同步 canvas 大小（如果遊戲已啟動）
+    document.addEventListener('fullscreenchange', () => {
+      if (gameActive && typeof Move !== 'undefined' && Move.onResize) {
+        Move.onResize();
+      }
+    });
+  </script>
+
+  <script>
+    // ================================================================
+    //  PauseManager — 暫停系統
+    // ================================================================
+    var PauseManager = (function () {
+      var _paused  = false;
+      var _overlay = null;
+      var _btn     = null;
+
+      function init() {
+        _overlay = document.getElementById('pause-overlay');
+        _btn     = document.getElementById('pause-btn');
+
+        // 暫停按鈕點擊
+        _btn.addEventListener('click', toggle);
+
+        // ESC 鍵暫停（遊戲中，且控制台未開）
+        document.addEventListener('keydown', function (e) {
+          if (!window.gameActive) return;
+          if (typeof InputLock !== 'undefined' && InputLock.isLocked()) return;
+          if (e.code === 'Escape') {
+            e.preventDefault();
+            toggle();
+          }
+        });
+
+        // Resume 按鈕
+        document.getElementById('pauseResume').addEventListener('click', resume);
+
+        // Settings 按鈕 → 開設定面板（保持暫停狀態，僅關閉暫停面板 UI）
+        document.getElementById('pauseSet').addEventListener('click', function () {
+          _overlay.classList.remove('open');   // 只收起暫停 overlay，不 resume
+          SettingsPanel.open();
+          // 設定面板關閉後重新顯示暫停 overlay
+          var origClose = SettingsPanel._onClose;
+          SettingsPanel._onClose = function () {
+            SettingsPanel._onClose = origClose;
+            if (_paused) _overlay.classList.add('open');
+          };
+        });
+
+        // Quit 按鈕 → 回主選單
+        document.getElementById('pauseQuit').addEventListener('click', function () {
+          // 強制重置暫停狀態（不走 resume 流程避免重新鎖滑鼠）
+          _paused = false;
+          _overlay.classList.remove('open');
+
+          // 停止遊戲 loop
+          window.gameActive = false;
+          if (typeof _loopRunning !== 'undefined') _loopRunning = false;
+
+          // 釋放指標鎖
+          if (document.pointerLockElement) document.exitPointerLock();
+
+          // ★ 音效：退出至主選單 → prepare.mp3
+          if (typeof AudioManager !== 'undefined') AudioManager.onQuit();
+
+          // ★ 完整釋放所有 InputLock（避免下一局 T 鍵被鎖住）
+          if (typeof InputLock !== 'undefined') InputLock.releaseAll();
+
+          // ★ 強制關閉 Victor UI 並清除 hintCanvas（避免殘留在主選單畫面）
+          if (typeof Victor !== 'undefined') {
+            Victor.forceClose();
+            // hintCanvas 清除
+            var hc = document.querySelector('canvas[style*="z-index:201"]');
+            if (hc) {
+              var hctx = hc.getContext('2d');
+              hctx.clearRect(0, 0, hc.width, hc.height);
+              hc.style.display = 'none';
+            }
+          }
+
+          // ★ 重置 Instruction 狀態（下次開始時 T 鍵才能正常運作）
+          if (typeof Instruction !== 'undefined' && Instruction.reset) {
+            Instruction.reset();
+          }
+
+          // 還原 UI
+          document.getElementById('menu').classList.remove('hide');
+          document.getElementById('bg').classList.remove('hide');
+          var cur = document.getElementById('cursor');
+          if (cur) { cur.classList.remove('hidden'); cur.style.display = ''; }
+          document.getElementById('crosshair').classList.remove('show');
+          document.getElementById('hud').style.display = 'none';
+          _btn.style.display = 'none';
+          _btn.innerHTML = '&#10074;&#10074;';   // ★ 重置為暫停圖示，避免下次開始顯示 ▶
+          _btn.title = 'PAUSE';
+          document.body.style.cursor = 'none';
+
+          // ★ 隱藏手電筒電量 HUD（動態建立在 body 上，需要主動隱藏）
+          if (typeof Flashlight !== 'undefined') Flashlight.hideHUD();
+        });
+      }
+
+      function pause() {
+        if (_paused) return;
+        _paused = true;
+        _overlay.classList.add('open');
+        // 釋放滑鼠鎖，顯示系統游標
+        if (document.pointerLockElement) document.exitPointerLock();
+        document.body.style.cursor = 'default';
+        var cur = document.getElementById('cursor');
+        if (cur) cur.style.display = 'none';
+        _btn.textContent = '▶';
+        _btn.title = 'RESUME';
+        // ★ 音效：暫停，所有音效靜音
+        if (typeof AudioManager !== 'undefined') AudioManager.onPause();
+        // 通知其他系統（如 move.js）
+        if (typeof window.onGamePause === 'function') window.onGamePause();
+      }
+
+      function resume() {
+        if (!_paused) return;
+        _paused = false;
+        _overlay.classList.remove('open');
+        document.body.style.cursor = 'none';
+        var cur = document.getElementById('cursor');
+        if (cur) cur.style.display = '';
+        _btn.innerHTML = '&#10074;&#10074;';
+        _btn.title = 'PAUSE';
+        // 重新鎖定滑鼠
+        var canvas = document.getElementById('glCanvas');
+        if (canvas && window.gameActive) canvas.requestPointerLock();
+        // ★ 音效：繼續，依當前遊戲狀態恢復音效
+        if (typeof AudioManager !== 'undefined') AudioManager.onResume();
+        if (typeof window.onGameResume === 'function') window.onGameResume();
+      }
+
+      function toggle() {
+        _paused ? resume() : pause();
+      }
+
+      function isPaused() { return _paused; }
+
+      // 遊戲啟動後才顯示暫停按鈕
+      function show() {
+        if (_btn) _btn.style.display = 'block';
+      }
+
+      return { init: init, pause: pause, resume: resume, toggle: toggle, isPaused: isPaused, show: show };
+    })();
+  </script>
+
+  <script>
+    // ================================================================
+    //  SettingsPanel — 設定面板
+    // ================================================================
+    var SettingsPanel = (function () {
+      var _overlay = null;
+
+      // 怪物全域變數對應表
+      var MONSTER_VARS = [
+        { id: 'tog-skinstealer', varName: 'onSkinstealer', label: 'SKINSTEALER' },
+        { id: 'tog-backteria',   varName: 'onBackteria',   label: 'BACKTERIA'   },
+        { id: 'tog-partygeor',   varName: 'onPartygeor',   label: 'PARTYGOER'   },
+        { id: 'tog-smiler',      varName: 'onSmiler',      label: 'SMILER'      },
+      ];
+
+      function open() {
+        _overlay = document.getElementById('settings-overlay');
+        _syncAll();
+        _overlay.classList.add('open');
+        // 面板開啟：顯示系統游標，隱藏自訂游標 div
+        document.body.style.cursor = 'default';
+        var cur = document.getElementById('cursor');
+        if (cur) cur.style.display = 'none';
+      }
+
+      function close() {
+        if (_overlay) _overlay.classList.remove('open');
+        // 面板關閉：還原自訂游標
+        document.body.style.cursor = 'none';
+        var cur = document.getElementById('cursor');
+        if (cur) cur.style.display = '';
+        // 通知暫停選單（若從暫停開啟的）
+        if (typeof SettingsPanel._onClose === 'function') {
+          var cb = SettingsPanel._onClose;
+          SettingsPanel._onClose = null;
+          cb();
+        }
+      }
+
+      // 同步按鈕狀態 → 從 window 全域變數讀取
+      function _syncAll() {
+        // 怪物開關
+        MONSTER_VARS.forEach(function (m) {
+          var btn = document.getElementById(m.id);
+          if (!btn) return;
+          // 預設 undefined 視為 true（怪物預設出現）
+          var val = (window[m.varName] !== false);
+          _setBtn(btn, val);
+        });
+
+        // Peace mode
+        var peacePeace = !!window.piece;
+        _setBtn(document.getElementById('tog-peace'), peacePeace);
+
+        // Console 開關
+        var conEnabled = (typeof Instruction === 'undefined') ? true
+          : (window._settingConsoleEnabled !== false);
+        _setBtn(document.getElementById('tog-console'), conEnabled);
+
+        // Eval 開關
+        _setBtn(document.getElementById('tog-eval'),
+          window._settingEvalEnabled !== false);
+
+        // NPC 指令
+        _setBtn(document.getElementById('tog-npc-cmd'),
+          window._settingNpcCmdEnabled !== false);
+
+        // TP 指令
+        _setBtn(document.getElementById('tog-tp-cmd'),
+          window._settingTpCmdEnabled !== false);
+      }
+
+      function _setBtn(btn, active) {
+        if (!btn) return;
+        if (active) {
+          btn.classList.add('active');
+          btn.textContent = 'ON';
+        } else {
+          btn.classList.remove('active');
+          btn.textContent = 'OFF';
+        }
+      }
+
+      function _toggle(btn, onTrue, onFalse) {
+        var isActive = btn.classList.contains('active');
+        _setBtn(btn, !isActive);
+        if (!isActive) { onTrue && onTrue(); }
+        else           { onFalse && onFalse(); }
+      }
+
+      function _init() {
+        _overlay = document.getElementById('settings-overlay');
+
+        // 關閉按鈕
+        document.getElementById('settings-close').addEventListener('click', close);
+        _overlay.addEventListener('click', function (e) {
+          if (e.target === _overlay) close();
+        });
+
+        // ── 怪物開關 ─────────────────────────────────────────────
+        MONSTER_VARS.forEach(function (m) {
+          var btn = document.getElementById(m.id);
+          if (!btn) return;
+          btn.addEventListener('click', function () {
+            _toggle(btn,
+              function () { window[m.varName] = true;  },
+              function () { window[m.varName] = false; }
+            );
+          });
+        });
+
+        // ── 和平模式 ─────────────────────────────────────────────
+        document.getElementById('tog-peace').addEventListener('click', function () {
+          var btn = this;
+          _toggle(btn,
+            function () { window.piece = true;  },
+            function () { window.piece = false; }
+          );
+        });
+
+        // ── Console 存取 ─────────────────────────────────────────
+        document.getElementById('tog-console').addEventListener('click', function () {
+          var btn = this;
+          _toggle(btn,
+            function () {
+              window._settingConsoleEnabled = true;
+              if (typeof Instruction !== 'undefined' && Instruction.setEnabled)
+                Instruction.setEnabled(true);
+            },
+            function () {
+              window._settingConsoleEnabled = false;
+              if (typeof Instruction !== 'undefined') {
+                if (Instruction.setEnabled) Instruction.setEnabled(false);
+                Instruction.close();
+              }
+            }
+          );
+        });
+
+        // ── Eval 指令 ────────────────────────────────────────────
+        document.getElementById('tog-eval').addEventListener('click', function () {
+          var btn = this;
+          _toggle(btn,
+            function () { window._settingEvalEnabled = true;  },
+            function () { window._settingEvalEnabled = false; }
+          );
+        });
+
+        // ── NPC 指令 ─────────────────────────────────────────────
+        document.getElementById('tog-npc-cmd').addEventListener('click', function () {
+          var btn = this;
+          _toggle(btn,
+            function () { window._settingNpcCmdEnabled = true;  },
+            function () { window._settingNpcCmdEnabled = false; }
+          );
+        });
+
+        // ── TP 指令 ──────────────────────────────────────────────
+        document.getElementById('tog-tp-cmd').addEventListener('click', function () {
+          var btn = this;
+          _toggle(btn,
+            function () { window._settingTpCmdEnabled = true;  },
+            function () { window._settingTpCmdEnabled = false; }
+          );
+        });
+      }
+
+      // 初始化全域開關預設值
+      window._settingConsoleEnabled = true;
+      window._settingEvalEnabled    = true;
+      window._settingNpcCmdEnabled  = true;
+      window._settingTpCmdEnabled   = true;
+      window.onSkinstealer = true;
+      window.onBackteria   = true;
+      window.onPartygeor   = true;
+      window.onSmiler      = true;
+
+      // ── 按鍵綁定預設值 ────────────────────────────────────────────
+      // e.code → 顯示文字對照
+      var CODE_LABEL = {
+        'KeyA':'A','KeyB':'B','KeyC':'C','KeyD':'D','KeyE':'E','KeyF':'F',
+        'KeyG':'G','KeyH':'H','KeyI':'I','KeyJ':'J','KeyK':'K','KeyL':'L',
+        'KeyM':'M','KeyN':'N','KeyO':'O','KeyP':'P','KeyQ':'Q','KeyR':'R',
+        'KeyS':'S','KeyT':'T','KeyU':'U','KeyV':'V','KeyW':'W','KeyX':'X',
+        'KeyY':'Y','KeyZ':'Z',
+        'Space':'SPACE','ShiftLeft':'SHIFT','ShiftRight':'SHIFT',
+        'CapsLock':'CAPS','ControlLeft':'CTRL','AltLeft':'ALT',
+        'ArrowUp':'↑','ArrowDown':'↓','ArrowLeft':'←','ArrowRight':'→',
+        'Digit1':'1','Digit2':'2','Digit3':'3','Digit4':'4','Digit5':'5',
+        'Digit6':'6','Digit7':'7','Digit8':'8','Digit9':'9','Digit0':'0',
+        'F1':'F1','F2':'F2','F3':'F3','F4':'F4','F5':'F5',
+      };
+
+      var KB_DEFAULTS = {
+        forward   : 'KeyW',
+        backward  : 'KeyS',
+        left      : 'KeyA',
+        right     : 'KeyD',
+        jump      : 'Space',
+        crouch    : 'ShiftLeft',
+        sprint    : 'CapsLock',
+        flashlight: 'KeyF',
+      };
+
+      window._keyBindings = Object.assign({}, KB_DEFAULTS);
+
+      function _codeToLabel(code) {
+        return CODE_LABEL[code] || code.replace('Key','').replace('Digit','');
+      }
+
+      // ── Keybind 綁定監聽 ─────────────────────────────────────────
+      var _listeningBtn  = null;
+      var _listeningBind = null;
+
+      function _startListen(btn, bindName) {
+        // 取消上一個監聽
+        if (_listeningBtn) {
+          _listeningBtn.classList.remove('listening');
+          _listeningBtn.textContent = _codeToLabel(window._keyBindings[_listeningBind]);
+        }
+        _listeningBtn  = btn;
+        _listeningBind = bindName;
+        btn.classList.add('listening');
+        btn.textContent = '...';
+      }
+
+      function _onKeybindKeydown(e) {
+        if (!_listeningBtn) return;
+        // 禁用的鍵：Escape 取消，Tab 跳過
+        if (e.code === 'Escape') {
+          _listeningBtn.classList.remove('listening');
+          _listeningBtn.textContent = _codeToLabel(window._keyBindings[_listeningBind]);
+          _listeningBtn  = null;
+          _listeningBind = null;
+          return;
+        }
+        // 不允許系統鍵
+        if (['F11','F5','Tab'].includes(e.code)) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        window._keyBindings[_listeningBind] = e.code;
+
+        // 如果是移動鍵，同步更新 Move._keys 的讀取（move.js 直接讀 e.code，不需額外操作）
+        _listeningBtn.classList.remove('listening');
+        _listeningBtn.textContent = _codeToLabel(e.code);
+        _listeningBtn  = null;
+        _listeningBind = null;
+        console.log('[Settings] 按鍵重綁定:', _listeningBind, '→', e.code);
+      }
+
+      document.addEventListener('keydown', _onKeybindKeydown, true);
+
+      function _initKeybinds() {
+        document.querySelectorAll('.keybind-btn').forEach(function (btn) {
+          var bind = btn.dataset.bind;
+          // 顯示預設標籤
+          btn.textContent = _codeToLabel(KB_DEFAULTS[bind] || '');
+          btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            _startListen(btn, bind);
+          });
+        });
+      }
+
+      // ── 移動鍵也讓 move.js update() 讀取 _keyBindings ────────────
+      // move.js update() 直接讀 _keys[e.code]，需要在 update 時額外對應
+      // 解法：在設定面板開啟前把預設移動鍵代換注入 Move.setMoveKeys（若有）
+      // 目前 move.js 的移動判斷是 _keys['KeyW'] 等，需要小幅修改 update()
+      // → 由 index.html 這裡 patch Move.update 來支援
+
+      var _origMoveUpdate = null;
+      function _patchMoveUpdate() {
+        if (_origMoveUpdate) return; // 只 patch 一次
+        if (typeof Move === 'undefined') return;
+        _origMoveUpdate = Move.update.bind(Move);
+        // 重新定義 update，讓移動方向讀取 _keyBindings
+        // 由於 Move 是 IIFE 無法直接存取私有 _keys，
+        // 改用注入 alias key 的方式：每幀把綁定鍵的狀態複製給預設鍵
+        // 這裡用 keydown/keyup 在 _keyBindings 改變後自動追蹤
+      }
+
+      // 更簡潔的方案：直接監聽 keydown/keyup，把自訂鍵對應到預設鍵的 Move._keys
+      // 透過 Move 的 _keys 只能靠 dispatchEvent 模擬，但不需要，
+      // 因為 move.js 的 update() 讀 _keys[e.code]，
+      // 所以只要在原有 keydown 中，把自訂 code 也寫到 _keys 裡就好。
+      // → 這個已由 move.js 修改版（讀取 window._keyBindings）處理，不需 patch。
+
+      // ── Slider 初始化 ────────────────────────────────────────────
+      function _initSliders() {
+        // 音量
+        var volSlider = document.getElementById('slider-volume');
+        var volVal    = document.getElementById('val-volume');
+        var savedVol  = window._settingVolume !== undefined ? Math.round(window._settingVolume * 100) : 100;
+        volSlider.value   = savedVol;
+        volVal.textContent = savedVol + '%';
+        volSlider.addEventListener('input', function () {
+          var v = parseInt(this.value);
+          volVal.textContent = v + '%';
+          if (typeof AudioManager !== 'undefined') AudioManager.setVolume(v / 100);
+        });
+
+        // 滑鼠靈敏度
+        var sensSlider = document.getElementById('slider-sens');
+        var sensVal    = document.getElementById('val-sens');
+        var savedSens  = window._settingSens !== undefined ? Math.round(window._settingSens * 100) : 15;
+        sensSlider.value   = savedSens;
+        sensVal.textContent = (savedSens / 100).toFixed(2);
+        sensSlider.addEventListener('input', function () {
+          var v = parseInt(this.value);
+          var sens = v / 100;
+          sensVal.textContent = sens.toFixed(2);
+          window._settingSens = sens;
+          if (typeof Move !== 'undefined') Move.setSens(sens);
+        });
+      }
+
+      // ── 同步 slider 顯示（面板開啟時）───────────────────────────
+      var _origOpen = null;
+      function _wrapOpen() {
+        _overlay = document.getElementById('settings-overlay');
+        _syncAll();
+        // 同步 slider 目前值
+        var volSlider = document.getElementById('slider-volume');
+        var volVal    = document.getElementById('val-volume');
+        if (volSlider && window._settingVolume !== undefined) {
+          var v = Math.round(window._settingVolume * 100);
+          volSlider.value = v;
+          volVal.textContent = v + '%';
+        }
+        var sensSlider = document.getElementById('slider-sens');
+        var sensVal    = document.getElementById('val-sens');
+        if (sensSlider && window._settingSens !== undefined) {
+          var s = Math.round(window._settingSens * 100);
+          sensSlider.value = s;
+          sensVal.textContent = (s / 100).toFixed(2);
+        }
+        // 同步 keybind 按鈕顯示
+        document.querySelectorAll('.keybind-btn').forEach(function (btn) {
+          var bind = btn.dataset.bind;
+          if (window._keyBindings && window._keyBindings[bind]) {
+            btn.textContent = _codeToLabel(window._keyBindings[bind]);
+          }
+        });
+        _overlay.classList.add('open');
+        document.body.style.cursor = 'default';
+        var cur = document.getElementById('cursor');
+        if (cur) cur.style.display = 'none';
+      }
+
+      // DOM 載入後初始化
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+          _init();
+          _initKeybinds();
+          _initSliders();
+        });
+      } else {
+        _init();
+        _initKeybinds();
+        _initSliders();
+      }
+
+      return {
+        open : _wrapOpen,
+        close: close,
+      };
+    })();
+  </script>
+
+  <script>
+    // ================================================================
+    //  QuestionPanel — QUESTION 按鈕文件翻閱面板
+    // ================================================================
+    var QuestionPanel = (function () {
+      var _overlay  = null;
+      var _cards    = [];   // NodeList → Array，index 0 = 第1張（rule）
+      var _current  = 0;   // 目前最上面顯示的是第幾張（0-based）
+      var _total    = 5;
+      var _animating = false;
+
+      function open() {
+        _overlay = document.getElementById('question-overlay');
+        _cards   = Array.from(document.querySelectorAll('.doc-card'));
+        _total   = _cards.length;
+        _current = 0;
+
+        // 重置所有卡片狀態
+        _cards.forEach(function (c) {
+          c.classList.remove('fly-out', 'is-top');
+          c.style.opacity = '';
+        });
+        // 最上面那張（最後一個 child = data-idx="0"）加 is-top
+        _cards[_cards.length - 1].classList.add('is-top');
+
+        _updateCounter();
+        _updateHint();
+
+        _overlay.classList.add('open');
+        document.body.style.cursor = 'default';
+        var cur = document.getElementById('cursor');
+        if (cur) cur.style.display = 'none';
+      }
+
+      function close() {
+        if (_overlay) _overlay.classList.remove('open');
+        document.body.style.cursor = 'none';
+        var cur = document.getElementById('cursor');
+        if (cur) cur.style.display = '';
+      }
+
+      function _nextCard() {
+        if (_animating) return;
+
+        _animating = true;
+
+        // 目前最上面那張：飛出
+        var topCard = _cards[_total - 1 - _current];
+        topCard.classList.remove('is-top');
+        topCard.classList.add('fly-out');
+
+        _current = (_current + 1) % _total;   // 循環
+
+        // 若回到第一張，重置所有卡片
+        if (_current === 0) {
+          setTimeout(function () {
+            _cards.forEach(function (c) {
+              c.classList.remove('fly-out', 'is-top');
+              c.style.zIndex = '';
+            });
+            _cards[_total - 1].classList.add('is-top');
+            _updateCounter();
+            _updateHint();
+            _animating = false;
+          }, 340);
+          return;
+        }
+
+        _updateCounter();
+        _updateHint();
+
+        // 新的最上面那張
+        var newTop = _cards[_total - 1 - _current];
+        newTop.classList.add('is-top');
+
+        setTimeout(function () {
+          topCard.style.zIndex = '0';
+          _animating = false;
+        }, 340);
+      }
+
+      function _updateCounter() {
+        var el = document.getElementById('doc-counter');
+        if (el) el.textContent = (_current + 1) + ' / ' + _total;
+      }
+
+      function _updateHint() {
+        var el = document.getElementById('doc-hint');
+        if (!el) return;
+        if (_current >= _total - 1) {
+          el.textContent = 'CLICK TO RESTART ↺';
+        } else {
+          el.textContent = 'CLICK TO TURN ›';
+        }
+      }
+
+      function _init() {
+        _overlay = document.getElementById('question-overlay');
+
+        // 點擊 stack 翻頁
+        var stack = document.getElementById('doc-stack');
+        stack.addEventListener('click', function (e) {
+          // 不讓關閉按鈕觸發翻頁
+          if (e.target.id === 'question-close') return;
+          _nextCard();
+        });
+
+        // 關閉按鈕
+        document.getElementById('question-close').addEventListener('click', function (e) {
+          e.stopPropagation();
+          close();
+        });
+
+        // 點擊遮罩關閉
+        _overlay.addEventListener('click', function (e) {
+          if (e.target === _overlay) close();
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _init);
+      } else {
+        _init();
+      }
+
+      return { open: open, close: close };
+    })();
+  </script>
+
+  <script>
+    // ================================================================
+    //  AboutPanel — ABOUT 按鈕面板
+    // ================================================================
+    var AboutPanel = (function () {
+      var _overlay = null;
+
+      function open() {
+        _overlay = document.getElementById('about-overlay');
+        _overlay.classList.add('open');
+        document.body.style.cursor = 'default';
+        var cur = document.getElementById('cursor');
+        if (cur) cur.style.display = 'none';
+      }
+
+      function close() {
+        if (_overlay) _overlay.classList.remove('open');
+        document.body.style.cursor = 'none';
+        var cur = document.getElementById('cursor');
+        if (cur) cur.style.display = '';
+      }
+
+      function _init() {
+        _overlay = document.getElementById('about-overlay');
+        document.getElementById('about-close').addEventListener('click', close);
+        _overlay.addEventListener('click', function (e) {
+          if (e.target === _overlay) close();
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _init);
+      } else {
+        _init();
+      }
+
+      return { open: open, close: close };
+    })();
+  </script>
+
+</body>
+
+</html>
